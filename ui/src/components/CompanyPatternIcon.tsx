@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "../lib/utils";
+import { withPublicBasePath } from "../lib/public-base-path";
 
 const BAYER_4X4 = [
   [0, 8, 2, 10],
@@ -170,7 +171,10 @@ export function CompanyPatternIcon({
 }: CompanyPatternIconProps) {
   const initial = companyName.trim().charAt(0).toUpperCase() || "?";
   const [imageError, setImageError] = useState(false);
-  const logo = !imageError && typeof logoUrl === "string" && logoUrl.trim().length > 0 ? logoUrl : null;
+  const logo =
+    !imageError && typeof logoUrl === "string" && logoUrl.trim().length > 0
+      ? withPublicBasePath(logoUrl)
+      : null;
   useEffect(() => {
     setImageError(false);
   }, [logoUrl]);

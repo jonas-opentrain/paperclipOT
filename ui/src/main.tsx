@@ -27,7 +27,33 @@ const publicBasePath = getPublicBasePath();
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register(withPublicBasePath("/sw.js"));
+    const serviceWorkerPath = withPublicBasePath("/sw.js");
+    const serviceWorkerScope = `${withPublicBasePath("/")}/`.replace(/\/{2,}/g, "/");
+    const serviceWorkerPaths = new Set(["/sw.js", serviceWorkerPath]);
+
+    const removePaperclipServiceWorkers = async () => {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(
+        registrations.map((registration) => {
+          const workerUrls = [registration.active, registration.waiting, registration.installing]
+            .map((worker) => worker?.scriptURL)
+            .filter((url): url is string => Boolean(url));
+          const isPaperclipWorker = workerUrls.some((url) =>
+            serviceWorkerPaths.has(new URL(url).pathname)
+          );
+          return isPaperclipWorker ? registration.unregister() : undefined;
+        })
+      );
+    };
+
+    if (publicBasePath) {
+      void removePaperclipServiceWorkers().catch(() => undefined);
+      return;
+    }
+
+    void removePaperclipServiceWorkers()
+      .then(() => navigator.serviceWorker.register(serviceWorkerPath, { scope: serviceWorkerScope }))
+      .catch(() => undefined);
   });
 }
 
