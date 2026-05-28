@@ -4,7 +4,14 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { createUiDevWatchOptions } from "./src/lib/vite-watch";
 
+function normalizeBasePath(value: string | undefined): string {
+  const trimmed = value?.trim().replace(/\/+$/, "") ?? "";
+  if (!trimmed) return "/";
+  return `${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}/`;
+}
+
 export default defineConfig(({ mode }) => ({
+  base: normalizeBasePath(process.env.VITE_PAPERCLIP_BASE_PATH ?? process.env.PAPERCLIP_BASE_PATH),
   plugins: [react(), tailwindcss()],
   build: {
     minify: "esbuild",

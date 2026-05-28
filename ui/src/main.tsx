@@ -17,14 +17,17 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { initPluginBridge } from "./plugins/bridge-init";
 import { PluginLauncherProvider } from "./plugins/launchers";
+import { getPublicBasePath, withPublicBasePath } from "@/lib/public-base-path";
 import "@mdxeditor/editor/style.css";
 import "./index.css";
 
 initPluginBridge(React, ReactDOM);
 
+const publicBasePath = getPublicBasePath();
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js");
+    navigator.serviceWorker.register(withPublicBasePath("/sw.js"));
   });
 }
 
@@ -41,7 +44,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={publicBasePath || undefined}>
           <CompanyProvider>
             <EditorAutocompleteProvider>
               <ToastProvider>

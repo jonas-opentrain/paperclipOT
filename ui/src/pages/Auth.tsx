@@ -7,6 +7,7 @@ import { getRememberedInvitePath } from "../lib/invite-memory";
 import { Button } from "@/components/ui/button";
 import { AsciiArtAnimation } from "@/components/AsciiArtAnimation";
 import { Sparkles } from "lucide-react";
+import { withPublicBasePath } from "@/lib/public-base-path";
 
 type AuthMode = "sign_in" | "sign_up";
 
@@ -94,7 +95,7 @@ export function AuthPage() {
           <form
             className="mt-6 space-y-4"
             method="post"
-            action={mode === "sign_up" ? "/api/auth/sign-up/email" : "/api/auth/sign-in/email"}
+            action={withPublicBasePath(mode === "sign_up" ? "/api/auth/sign-up/email" : "/api/auth/sign-in/email")}
             onSubmit={(event) => {
               event.preventDefault();
               if (mutation.isPending) return;

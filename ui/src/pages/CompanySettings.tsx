@@ -14,6 +14,7 @@ import {
   ToggleField,
   HintIcon,
 } from "../components/agent-config-primitives";
+import { withPublicBasePath } from "../lib/public-base-path";
 
 type AgentSnippetInput = {
   onboardingTextUrl: string;
@@ -90,7 +91,7 @@ export function CompanySettings() {
         `/api/invites/${invite.token}/onboarding.txt`;
       const absoluteUrl = onboardingTextLink.startsWith("http")
         ? onboardingTextLink
-        : `${base}${onboardingTextLink}`;
+        : `${base}${withPublicBasePath(onboardingTextLink)}`;
       setSnippetCopied(false);
       setSnippetCopyDelightId(0);
       let snippet: string;

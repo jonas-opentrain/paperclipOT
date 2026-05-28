@@ -35,6 +35,7 @@ import type {
 import { pluginsApi } from "@/api/plugins";
 import { ApiError } from "@/api/client";
 import { useToastActions, type ToastInput } from "@/context/ToastContext";
+import { withPublicBasePath } from "@/lib/public-base-path";
 
 // ---------------------------------------------------------------------------
 // Bridge error type (mirrors the SDK's PluginBridgeError)
@@ -421,7 +422,9 @@ export function usePluginStream<T = unknown>(
 
     const params = new URLSearchParams({ companyId: effectiveCompanyId });
     const source = new EventSource(
-      `/api/plugins/${encodeURIComponent(pluginId)}/bridge/stream/${encodeURIComponent(channel)}?${params.toString()}`,
+      withPublicBasePath(
+        `/api/plugins/${encodeURIComponent(pluginId)}/bridge/stream/${encodeURIComponent(channel)}?${params.toString()}`,
+      ),
       { withCredentials: true },
     );
     sourceRef.current = source;

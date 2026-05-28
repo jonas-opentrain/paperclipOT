@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "../components/EmptyState";
 import { AgentConfigForm } from "../components/AgentConfigForm";
 import { cn } from "../lib/utils";
+import { withPublicBasePath } from "@/lib/public-base-path";
 import {
   ArrowRight,
   Check,
@@ -867,7 +868,7 @@ export function CompanyImport() {
         body: `${result.company.name}: ${result.agents.length} agent${result.agents.length === 1 ? "" : "s"} processed.`,
       });
       // Force a fresh dashboard load so newly imported agents are immediately visible.
-      window.location.assign(`/${importedCompany.issuePrefix}/dashboard`);
+      window.location.assign(withPublicBasePath(`/${importedCompany.issuePrefix}/dashboard`));
     },
     onError: (err) => {
       pushToast({

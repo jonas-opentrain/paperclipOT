@@ -1,4 +1,6 @@
-const BASE = "/api";
+import { withPublicBasePath } from "@/lib/public-base-path";
+
+const BASE = withPublicBasePath("/api");
 
 export class ApiError extends Error {
   status: number;

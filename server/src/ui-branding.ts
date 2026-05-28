@@ -3,13 +3,6 @@ const FAVICON_BLOCK_END = "<!-- PAPERCLIP_FAVICON_END -->";
 const RUNTIME_BRANDING_BLOCK_START = "<!-- PAPERCLIP_RUNTIME_BRANDING_START -->";
 const RUNTIME_BRANDING_BLOCK_END = "<!-- PAPERCLIP_RUNTIME_BRANDING_END -->";
 
-const DEFAULT_FAVICON_LINKS = [
-  '<link rel="icon" href="/favicon.ico" sizes="48x48" />',
-  '<link rel="icon" href="/favicon.svg" type="image/svg+xml" />',
-  '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />',
-  '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />',
-].join("\n");
-
 export type WorktreeUiBranding = {
   enabled: boolean;
   name: string | null;
@@ -28,6 +21,26 @@ function nonEmpty(value: string | undefined): string | null {
   if (typeof value !== "string") return null;
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeBasePath(value: string | undefined): string {
+  const trimmed = value?.trim().replace(/\/+$/, "") ?? "";
+  if (!trimmed || trimmed === "/") return "";
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+function withBasePath(path: string, env: NodeJS.ProcessEnv): string {
+  const basePath = normalizeBasePath(env.PAPERCLIP_BASE_PATH ?? env.VITE_PAPERCLIP_BASE_PATH);
+  return basePath ? `${basePath}${path}` : path;
+}
+
+function renderDefaultFaviconLinks(env: NodeJS.ProcessEnv): string {
+  return [
+    `<link rel="icon" href="${withBasePath("/favicon.ico", env)}" sizes="48x48" />`,
+    `<link rel="icon" href="${withBasePath("/favicon.svg", env)}" type="image/svg+xml" />`,
+    `<link rel="icon" type="image/png" sizes="32x32" href="${withBasePath("/favicon-32x32.png", env)}" />`,
+    `<link rel="icon" type="image/png" sizes="16x16" href="${withBasePath("/favicon-16x16.png", env)}" />`,
+  ].join("\n");
 }
 
 function normalizeHexColor(value: string | undefined): string | null {
@@ -168,8 +181,11 @@ export function getWorktreeUiBranding(env: NodeJS.ProcessEnv = process.env): Wor
   };
 }
 
-export function renderFaviconLinks(branding: WorktreeUiBranding): string {
-  if (!branding.enabled || !branding.faviconHref) return DEFAULT_FAVICON_LINKS;
+export function renderFaviconLinks(
+  branding: WorktreeUiBranding,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  if (!branding.enabled || !branding.faviconHref) return renderDefaultFaviconLinks(env);
 
   const href = escapeHtmlAttribute(branding.faviconHref);
   return [
@@ -207,7 +223,7 @@ function replaceMarkedBlock(html: string, startMarker: string, endMarker: string
 
 export function applyUiBranding(html: string, env: NodeJS.ProcessEnv = process.env): string {
   const branding = getWorktreeUiBranding(env);
-  const withFavicon = replaceMarkedBlock(html, FAVICON_BLOCK_START, FAVICON_BLOCK_END, renderFaviconLinks(branding));
+  const withFavicon = replaceMarkedBlock(html, FAVICON_BLOCK_START, FAVICON_BLOCK_END, renderFaviconLinks(branding, env));
   return replaceMarkedBlock(
     withFavicon,
     RUNTIME_BRANDING_BLOCK_START,

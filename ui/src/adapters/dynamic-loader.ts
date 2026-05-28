@@ -31,6 +31,7 @@ import type { TranscriptEntry } from "@paperclipai/adapter-utils";
 import type { StdoutLineParser, StdoutParserFactory } from "./types";
 import { createSandboxedWorker } from "./sandboxed-parser-worker";
 import type { SandboxRequest, SandboxResponse } from "./sandboxed-parser-worker";
+import { withPublicBasePath } from "@/lib/public-base-path";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -229,7 +230,7 @@ export async function loadDynamicParser(adapterType: string): Promise<DynamicPar
 
   const loadPromise = (async (): Promise<DynamicParserModule | null> => {
     try {
-      const response = await fetch(`/api/adapters/${encodeURIComponent(adapterType)}/ui-parser.js`);
+      const response = await fetch(withPublicBasePath(`/api/adapters/${encodeURIComponent(adapterType)}/ui-parser.js`));
       if (!response.ok) {
         failedLoads.add(adapterType);
         return null;

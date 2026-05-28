@@ -44,6 +44,7 @@ import { ScrollToBottom } from "../components/ScrollToBottom";
 import { formatCents, formatDate, relativeTime, formatTokens, visibleRunCostUsd } from "../lib/utils";
 import { cn } from "../lib/utils";
 import { describeRunRetryState } from "../lib/runRetryState";
+import { publicWebSocketUrl } from "../lib/public-base-path";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
@@ -3741,8 +3742,7 @@ function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType: strin
 
     const connect = () => {
       if (closed) return;
-      const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-      const url = `${protocol}://${window.location.host}/api/companies/${encodeURIComponent(run.companyId)}/events/ws`;
+      const url = publicWebSocketUrl(`/api/companies/${encodeURIComponent(run.companyId)}/events/ws`);
       socket = new WebSocket(url);
 
       socket.onopen = () => {

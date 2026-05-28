@@ -12,6 +12,7 @@ import { queryKeys } from "../lib/queryKeys";
 import { parseIssueReferenceFromHref, remarkLinkIssueReferences } from "../lib/issue-reference";
 import { remarkSoftBreaks } from "../lib/remark-soft-breaks";
 import { StatusIcon } from "./StatusIcon";
+import { withPublicBasePath } from "../lib/public-base-path";
 
 interface MarkdownBodyProps {
   children: string;
@@ -131,6 +132,11 @@ function isExternalHttpUrl(href: string | null | undefined): boolean {
   } catch {
     return false;
   }
+}
+
+function resolvePublicHref(href: string | null | undefined): string | undefined {
+  if (!href) return href ?? undefined;
+  return href.startsWith("/") ? withPublicBasePath(href) : href;
 }
 
 function renderLinkBody(
@@ -393,7 +399,7 @@ export function MarkdownBody({
             : `/agents/${parsed.agentId}`;
         return (
           <a
-            href={targetHref}
+            href={withPublicBasePath(targetHref)}
             className={cn(
               "paperclip-mention-chip",
               `paperclip-mention-chip--${parsed.kind}`,
@@ -416,7 +422,7 @@ export function MarkdownBody({
       ) : null;
       return (
         <a
-          href={href}
+          href={resolvePublicHref(href)}
           {...(isExternal
             ? { target: "_blank", rel: "noopener noreferrer" }
             : { rel: "noreferrer" })}
@@ -427,21 +433,19 @@ export function MarkdownBody({
       );
     },
   };
-  if (resolveImageSrc || onImageClick) {
-    components.img = ({ node: _node, src, alt, ...imgProps }) => {
-      const resolved = resolveImageSrc && src ? resolveImageSrc(src) : null;
-      const finalSrc = resolved ?? src;
-      return (
-        <img
-          {...imgProps}
-          src={finalSrc}
-          alt={alt ?? ""}
-          onClick={onImageClick && finalSrc ? (e) => { e.preventDefault(); onImageClick(finalSrc); } : undefined}
-          style={onImageClick ? { cursor: "pointer", ...(imgProps.style as React.CSSProperties | undefined) } : imgProps.style as React.CSSProperties | undefined}
-        />
-      );
-    };
-  }
+  components.img = ({ node: _node, src, alt, ...imgProps }) => {
+    const resolved = resolveImageSrc && src ? resolveImageSrc(src) : null;
+    const finalSrc = resolvePublicHref(resolved ?? src);
+    return (
+      <img
+        {...imgProps}
+        src={finalSrc}
+        alt={alt ?? ""}
+        onClick={onImageClick && finalSrc ? (e) => { e.preventDefault(); onImageClick(finalSrc); } : undefined}
+        style={onImageClick ? { cursor: "pointer", ...(imgProps.style as React.CSSProperties | undefined) } : imgProps.style as React.CSSProperties | undefined}
+      />
+    );
+  };
 
   return (
     <div
