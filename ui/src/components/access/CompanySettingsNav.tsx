@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "@/lib/router";
 const items = [
   { value: "general", label: "General", href: "/company/settings" },
   { value: "environments", label: "Environments", href: "/company/settings/environments" },
+  { value: "secrets", label: "Secrets", href: "/company/settings/secrets" },
   { value: "access", label: "Access", href: "/company/settings/access" },
   { value: "invites", label: "Invites", href: "/company/settings/invites" },
 ] as const;
@@ -14,6 +15,10 @@ type CompanySettingsTab = (typeof items)[number]["value"];
 export function getCompanySettingsTab(pathname: string): CompanySettingsTab {
   if (pathname.includes("/company/settings/environments")) {
     return "environments";
+  }
+
+  if (pathname.includes("/company/settings/secrets")) {
+    return "secrets";
   }
 
   if (pathname.includes("/company/settings/access")) {
