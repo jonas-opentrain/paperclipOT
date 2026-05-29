@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Request } from "express";
-import { shouldServeViteDevHtml } from "../app.js";
+import { setHostedUiCorsHeaders, shouldServeViteDevHtml } from "../app.js";
 
 function createRequest(path: string, acceptsResult: string | false): Request {
   return {
@@ -23,5 +23,21 @@ describe("shouldServeViteDevHtml", () => {
   it("skips vite asset requests", () => {
     expect(shouldServeViteDevHtml(createRequest("/@vite/client", "html"))).toBe(false);
     expect(shouldServeViteDevHtml(createRequest("/src/main.tsx", "html"))).toBe(false);
+  });
+});
+
+describe("setHostedUiCorsHeaders", () => {
+  it("allows static UI assets to load after public router redirects", () => {
+    const headers = new Map<string, string | number | readonly string[]>();
+
+    setHostedUiCorsHeaders({
+      setHeader(name, value) {
+        headers.set(name.toLowerCase(), value);
+        return this;
+      },
+    });
+
+    expect(headers.get("access-control-allow-origin")).toBe("*");
+    expect(headers.get("cross-origin-resource-policy")).toBe("cross-origin");
   });
 });

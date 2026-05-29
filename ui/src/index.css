@@ -3,6 +3,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html[data-paperclip-hosted-base-path] {
+  --paperclip-hosted-static-assets: 1;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
