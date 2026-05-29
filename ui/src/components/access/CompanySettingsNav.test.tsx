@@ -60,6 +60,8 @@ describe("CompanySettingsNav", () => {
     expect(getCompanySettingsTab("/PAP/company/settings")).toBe("general");
     expect(getCompanySettingsTab("/company/settings/environments")).toBe("environments");
     expect(getCompanySettingsTab("/PAP/company/settings/environments")).toBe("environments");
+    expect(getCompanySettingsTab("/company/settings/secrets")).toBe("secrets");
+    expect(getCompanySettingsTab("/PAP/company/settings/secrets")).toBe("secrets");
     expect(getCompanySettingsTab("/company/settings/access")).toBe("access");
     expect(getCompanySettingsTab("/PAP/company/settings/access")).toBe("access");
     expect(getCompanySettingsTab("/company/settings/invites")).toBe("invites");
@@ -80,6 +82,7 @@ describe("CompanySettingsNav", () => {
         items: [
           { value: "general", label: "General" },
           { value: "environments", label: "Environments" },
+          { value: "secrets", label: "Secrets" },
           { value: "access", label: "Access" },
           { value: "invites", label: "Invites" },
         ],
