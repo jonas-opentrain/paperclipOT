@@ -14,10 +14,10 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "node init && vite",
+    "build": "node init && tsc -b && vite build",
     "storybook": "storybook dev -p 6006 -c storybook/.storybook",
-    "build-storybook": "storybook build -c storybook/.storybook -o storybook-static",
+    "build-storybook": "node init && storybook build -c storybook/.storybook -o storybook-static",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "clean": "rm -rf dist storybook-static tsconfig.tsbuildinfo",

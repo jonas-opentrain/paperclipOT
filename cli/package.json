@@ -1,7 +1,7 @@
 {
   "name": "paperclipai",
   "version": "0.3.1",
-  "description": "Paperclip CLI — orchestrate AI agent teams to run a business",
+  "description": "Paperclip CLI \u2014 orchestrate AI agent teams to run a business",
   "type": "module",
   "bin": {
     "paperclipai": "./dist/index.js"
@@ -30,8 +30,8 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "tsx src/index.ts",
-    "build": "node --input-type=module -e \"import esbuild from 'esbuild'; import config from './esbuild.config.mjs'; await esbuild.build(config);\" && chmod +x dist/index.js",
+    "dev": "node init && tsx src/index.ts",
+    "build": "node init && node --input-type=module -e \"import esbuild from 'esbuild'; import config from './esbuild.config.mjs'; await esbuild.build(config);\" && chmod +x dist/index.js",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },

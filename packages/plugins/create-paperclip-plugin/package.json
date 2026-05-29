@@ -36,7 +36,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "node init && tsc",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },
