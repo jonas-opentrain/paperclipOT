@@ -25,6 +25,10 @@ initPluginBridge(React, ReactDOM);
 
 const publicBasePath = getPublicBasePath();
 
+if (publicBasePath) {
+  document.documentElement.dataset.paperclipHostedBasePath = publicBasePath;
+}
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     const serviceWorkerPath = withPublicBasePath("/sw.js");

@@ -1,6 +1,7 @@
 import express, { Router, type Request as ExpressRequest } from "express";
 import path from "node:path";
 import fs from "node:fs";
+import type { ServerResponse } from "node:http";
 import { fileURLToPath } from "node:url";
 import type { Db } from "@paperclipai/db";
 import type { DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
@@ -103,6 +104,11 @@ export function shouldEnablePrivateHostnameGuard(opts: {
     opts.deploymentExposure === "private" &&
     (opts.deploymentMode === "local_trusted" || opts.deploymentMode === "authenticated")
   );
+}
+
+export function setHostedUiCorsHeaders(res: Pick<ServerResponse, "setHeader">) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
 }
 
 export async function createApp(
@@ -315,6 +321,9 @@ export async function createApp(
         express.static(path.join(uiDist, "assets"), {
           maxAge: "1y",
           immutable: true,
+          setHeaders(res) {
+            setHostedUiCorsHeaders(res);
+          },
         }),
       );
       // Non-hashed static files (favicon.ico, manifest, robots.txt, etc.):
@@ -326,8 +335,9 @@ export async function createApp(
         express.static(uiDist, {
           maxAge: "1h",
           setHeaders(res, filePath) {
+            setHostedUiCorsHeaders(res);
             if (path.basename(filePath) === "index.html") {
-              res.set("Cache-Control", "no-cache");
+              res.setHeader("Cache-Control", "no-cache");
             }
           },
         }),
@@ -343,6 +353,7 @@ export async function createApp(
           res.status(404).end();
           return;
         }
+        setHostedUiCorsHeaders(res);
         res
           .status(200)
           .set("Content-Type", "text/html")
