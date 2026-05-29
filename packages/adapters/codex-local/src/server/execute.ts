@@ -334,7 +334,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const preparedManagedCodexHome =
     configuredCodexHome ? null : await prepareManagedCodexHome(process.env, onLog, agent.companyId);
   const defaultCodexHome = resolveManagedCodexHomeDir(process.env, agent.companyId);
-  const effectiveCodexHome = configuredCodexHome ?? preparedManagedCodexHome ?? defaultCodexHome;
+  const effectiveCodexHome = configuredCodexHome ?? preparedManagedCodexHome?.codexHome ?? defaultCodexHome;
+  const effectiveXdgConfigHome = preparedManagedCodexHome?.xdgConfigHome ?? null;
   await fs.mkdir(effectiveCodexHome, { recursive: true });
   // Inject skills into the same CODEX_HOME that Codex will actually run with
   // (managed home in the default case, or an explicit override from adapter config).
@@ -364,6 +365,17 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
               localDir: effectiveCodexHome,
               followSymlinks: true,
             },
+            ...(effectiveXdgConfigHome
+              ? [{
+                  key: "xdgConfig",
+                  localDir: effectiveXdgConfigHome,
+                  followSymlinks: true,
+                } satisfies {
+                  key: string;
+                  localDir: string;
+                  followSymlinks: boolean;
+                }]
+              : []),
           ],
         });
       })()
@@ -456,6 +468,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     if (typeof v === "string") env[k] = v;
   }
   env.CODEX_HOME = remoteCodexHome ?? effectiveCodexHome;
+  if (effectiveXdgConfigHome) {
+    env.XDG_CONFIG_HOME = executionTargetIsRemote
+      ? preparedExecutionTargetRuntime?.assetDirs.xdgConfig ?? effectiveXdgConfigHome
+      : effectiveXdgConfigHome;
+  }
   if (!hasExplicitApiKey && authToken) {
     env.PAPERCLIP_API_KEY = authToken;
   }

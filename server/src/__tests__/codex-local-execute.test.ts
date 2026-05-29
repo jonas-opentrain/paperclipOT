@@ -10,13 +10,14 @@ async function writeFakeCodexCommand(commandPath: string): Promise<void> {
 const fs = require("node:fs");
 
 const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
-const payload = {
-  argv: process.argv.slice(2),
-  prompt: fs.readFileSync(0, "utf8"),
-  codexHome: process.env.CODEX_HOME || null,
-  paperclipWakePayloadJson: process.env.PAPERCLIP_WAKE_PAYLOAD_JSON || null,
-  paperclipApiUrl: process.env.PAPERCLIP_API_URL || null,
-  paperclipApiKey: process.env.PAPERCLIP_API_KEY || null,
+  const payload = {
+    argv: process.argv.slice(2),
+    prompt: fs.readFileSync(0, "utf8"),
+    codexHome: process.env.CODEX_HOME || null,
+    xdgConfigHome: process.env.XDG_CONFIG_HOME || null,
+    paperclipWakePayloadJson: process.env.PAPERCLIP_WAKE_PAYLOAD_JSON || null,
+    paperclipApiUrl: process.env.PAPERCLIP_API_URL || null,
+    paperclipApiKey: process.env.PAPERCLIP_API_KEY || null,
   paperclipApiBridgeMode: process.env.PAPERCLIP_API_BRIDGE_MODE || null,
   paperclipEnvKeys: Object.keys(process.env)
     .filter((key) => key.startsWith("PAPERCLIP_"))
@@ -46,6 +47,7 @@ type CapturePayload = {
   argv: string[];
   prompt: string;
   codexHome: string | null;
+  xdgConfigHome: string | null;
   paperclipWakePayloadJson: string | null;
   paperclipApiUrl?: string | null;
   paperclipApiKey?: string | null;
@@ -99,6 +101,7 @@ describe("codex execute", () => {
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
     const sharedCodexHome = path.join(root, "shared-codex-home");
+    const sharedXdgConfigHome = path.join(root, "shared-xdg-config");
     const paperclipHome = path.join(root, "paperclip-home");
     const managedCodexHome = path.join(
       paperclipHome,
@@ -108,10 +111,17 @@ describe("codex execute", () => {
       "company-1",
       "codex-home",
     );
+    const managedXdgConfigHome = path.join(managedCodexHome, "xdg-config");
     await fs.mkdir(workspace, { recursive: true });
     await fs.mkdir(sharedCodexHome, { recursive: true });
+    await fs.mkdir(path.join(sharedXdgConfigHome, "cup"), { recursive: true });
     await fs.writeFile(path.join(sharedCodexHome, "auth.json"), '{"token":"shared"}\n', "utf8");
     await fs.writeFile(path.join(sharedCodexHome, "config.toml"), 'model = "codex-mini-latest"\n', "utf8");
+    await fs.writeFile(
+      path.join(sharedXdgConfigHome, "cup", "config.json"),
+      '{ "defaultProfile": "default", "profiles": { "default": { "teamId": "team-1" } } }\n',
+      "utf8",
+    );
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
@@ -119,11 +129,13 @@ describe("codex execute", () => {
     const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
     const previousPaperclipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
+    const previousXdgConfigHome = process.env.XDG_CONFIG_HOME;
     process.env.HOME = root;
     process.env.PAPERCLIP_HOME = paperclipHome;
     delete process.env.PAPERCLIP_INSTANCE_ID;
     delete process.env.PAPERCLIP_IN_WORKTREE;
     process.env.CODEX_HOME = sharedCodexHome;
+    process.env.XDG_CONFIG_HOME = sharedXdgConfigHome;
 
     try {
       const logs: LogEntry[] = [];
@@ -162,13 +174,16 @@ describe("codex execute", () => {
 
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
       expect(capture.codexHome).toBe(managedCodexHome);
+      expect(capture.xdgConfigHome).toBe(managedXdgConfigHome);
 
       const managedAuth = path.join(managedCodexHome, "auth.json");
       const managedConfig = path.join(managedCodexHome, "config.toml");
+      const managedCupConfig = path.join(managedXdgConfigHome, "cup", "config.json");
       expect((await fs.lstat(managedAuth)).isSymbolicLink()).toBe(true);
       expect(await fs.realpath(managedAuth)).toBe(await fs.realpath(path.join(sharedCodexHome, "auth.json")));
       expect((await fs.lstat(managedConfig)).isFile()).toBe(true);
       expect(await fs.readFile(managedConfig, "utf8")).toBe('model = "codex-mini-latest"\n');
+      expect(await fs.readFile(managedCupConfig, "utf8")).toContain('"teamId": "team-1"');
       await expect(fs.lstat(path.join(sharedCodexHome, "companies", "company-1"))).rejects.toThrow();
       expect(logs).toContainEqual(
         expect.objectContaining({
@@ -187,6 +202,8 @@ describe("codex execute", () => {
       else process.env.PAPERCLIP_IN_WORKTREE = previousPaperclipInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
+      if (previousXdgConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
+      else process.env.XDG_CONFIG_HOME = previousXdgConfigHome;
       await fs.rm(root, { recursive: true, force: true });
     }
   });
@@ -1047,6 +1064,7 @@ describe("codex execute", () => {
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
     const sharedCodexHome = path.join(root, "shared-codex-home");
+    const sharedXdgConfigHome = path.join(root, "shared-xdg-config");
     const paperclipHome = path.join(root, "paperclip-home");
     const isolatedCodexHome = path.join(
       paperclipHome,
@@ -1056,11 +1074,18 @@ describe("codex execute", () => {
       "company-1",
       "codex-home",
     );
+    const isolatedXdgConfigHome = path.join(isolatedCodexHome, "xdg-config");
     const homeSkill = path.join(isolatedCodexHome, "skills", "paperclip");
     await fs.mkdir(workspace, { recursive: true });
     await fs.mkdir(sharedCodexHome, { recursive: true });
+    await fs.mkdir(path.join(sharedXdgConfigHome, "cup"), { recursive: true });
     await fs.writeFile(path.join(sharedCodexHome, "auth.json"), '{"token":"shared"}\n', "utf8");
     await fs.writeFile(path.join(sharedCodexHome, "config.toml"), 'model = "codex-mini-latest"\n', "utf8");
+    await fs.writeFile(
+      path.join(sharedXdgConfigHome, "cup", "config.json"),
+      '{ "defaultProfile": "default", "profiles": { "default": { "teamId": "team-2" } } }\n',
+      "utf8",
+    );
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
@@ -1068,11 +1093,13 @@ describe("codex execute", () => {
     const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
     const previousPaperclipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
+    const previousXdgConfigHome = process.env.XDG_CONFIG_HOME;
     process.env.HOME = root;
     process.env.PAPERCLIP_HOME = paperclipHome;
     process.env.PAPERCLIP_INSTANCE_ID = "worktree-1";
     process.env.PAPERCLIP_IN_WORKTREE = "true";
     process.env.CODEX_HOME = sharedCodexHome;
+    process.env.XDG_CONFIG_HOME = sharedXdgConfigHome;
 
     try {
       const logs: LogEntry[] = [];
@@ -1111,6 +1138,7 @@ describe("codex execute", () => {
 
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
       expect(capture.codexHome).toBe(isolatedCodexHome);
+      expect(capture.xdgConfigHome).toBe(isolatedXdgConfigHome);
       expect(capture.argv).toEqual(expect.arrayContaining(["exec", "--json", "-"]));
       expect(capture.prompt).toContain("Follow the paperclip heartbeat.");
       expect(capture.paperclipEnvKeys).toEqual(
@@ -1125,11 +1153,13 @@ describe("codex execute", () => {
 
       const isolatedAuth = path.join(isolatedCodexHome, "auth.json");
       const isolatedConfig = path.join(isolatedCodexHome, "config.toml");
+      const isolatedCupConfig = path.join(isolatedXdgConfigHome, "cup", "config.json");
 
       expect((await fs.lstat(isolatedAuth)).isSymbolicLink()).toBe(true);
       expect(await fs.realpath(isolatedAuth)).toBe(await fs.realpath(path.join(sharedCodexHome, "auth.json")));
       expect((await fs.lstat(isolatedConfig)).isFile()).toBe(true);
       expect(await fs.readFile(isolatedConfig, "utf8")).toBe('model = "codex-mini-latest"\n');
+      expect(await fs.readFile(isolatedCupConfig, "utf8")).toContain('"teamId": "team-2"');
       expect((await fs.lstat(homeSkill)).isSymbolicLink()).toBe(true);
       expect(logs).toContainEqual(
         expect.objectContaining({
@@ -1154,6 +1184,8 @@ describe("codex execute", () => {
       else process.env.PAPERCLIP_IN_WORKTREE = previousPaperclipInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
+      if (previousXdgConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
+      else process.env.XDG_CONFIG_HOME = previousXdgConfigHome;
       await fs.rm(root, { recursive: true, force: true });
     }
   });
