@@ -4,7 +4,6 @@ node_modules/
 **/node_modules/
 dist/
 ui/storybook-static/
-.env
 *.tsbuildinfo
 drizzle/meta/
 .vite/
@@ -40,7 +39,6 @@ diagnostics/
 
 # Editor / tool temp files
 *.tmp
-.vscode/
 .claude/settings.local.json
 .paperclip-local/
 /.idea/
@@ -56,3 +54,4 @@ tests/release-smoke/test-results/
 tests/release-smoke/playwright-report/
 .superset/
 .claude/worktrees/
+config.bat
