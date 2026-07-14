@@ -1839,6 +1839,79 @@ describeEmbeddedPostgres("issueService blockers and dependency wake readiness", 
       childIssueSummaryTruncated: false,
     });
   });
+
+  it("does not wake a blocked parent on child completion while first-class blockers remain unresolved", async () => {
+    const companyId = randomUUID();
+    const assigneeAgentId = randomUUID();
+    await db.insert(companies).values({
+      id: companyId,
+      name: "Paperclip",
+      issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
+      requireBoardApprovalForNewAgents: false,
+    });
+    await db.insert(agents).values({
+      id: assigneeAgentId,
+      companyId,
+      name: "CodexCoder",
+      role: "engineer",
+      status: "active",
+      adapterType: "codex_local",
+      adapterConfig: {},
+      runtimeConfig: {},
+      permissions: {},
+    });
+
+    const parentId = randomUUID();
+    const blockerId = randomUUID();
+    const childA = randomUUID();
+    const childB = randomUUID();
+    await db.insert(issues).values([
+      {
+        id: parentId,
+        companyId,
+        title: "Parent issue",
+        status: "blocked",
+        priority: "medium",
+        assigneeAgentId,
+      },
+      {
+        id: blockerId,
+        companyId,
+        title: "Blocking child issue",
+        status: "in_progress",
+        priority: "high",
+        assigneeAgentId,
+      },
+      {
+        id: childA,
+        companyId,
+        parentId,
+        title: "Completed child A",
+        status: "done",
+        priority: "medium",
+      },
+      {
+        id: childB,
+        companyId,
+        parentId,
+        title: "Completed child B",
+        status: "cancelled",
+        priority: "medium",
+      },
+    ]);
+
+    await svc.update(parentId, { blockedByIssueIds: [blockerId] });
+
+    expect(await svc.getWakeableParentAfterChildCompletion(parentId)).toBeNull();
+
+    await svc.update(blockerId, { status: "done" });
+
+    expect(await svc.getWakeableParentAfterChildCompletion(parentId)).toMatchObject({
+      id: parentId,
+      assigneeAgentId,
+      childIssueIds: [childA, childB],
+    });
+  });
 });
 
 describeEmbeddedPostgres("issueService.create workspace inheritance", () => {
