@@ -2536,6 +2536,13 @@ export function issueService(db: Db) {
       if (!parent || !parent.assigneeAgentId || ["backlog", "done", "cancelled"].includes(parent.status)) {
         return null;
       }
+      if (parent.status === "blocked") {
+        const readiness = await listIssueDependencyReadinessMap(db, parent.companyId, [parentIssueId]);
+        const parentReadiness = readiness.get(parentIssueId) ?? createIssueDependencyReadiness(parentIssueId);
+        if (parentReadiness.unresolvedBlockerCount > 0) {
+          return null;
+        }
+      }
 
       const children = await db
         .select({
